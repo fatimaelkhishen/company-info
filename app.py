@@ -3,7 +3,7 @@ import csv
 import os
 import json
 import pandas as pd
-from Emsi import extract_skills_from_text  # <-- تفترض إنه موجود عندك
+from Emsi import extract_skills_from_text  
 
 app = Flask(__name__)
 esco_df = pd.read_excel("esco.xlsx")
@@ -1372,6 +1372,11 @@ renderSelected();
 /* ===================== Example: Pre-select skill ===================== */
 // selectSkill("JavaScript"); // uncomment and replace with any skill
 </script>
+<!-- Equal Opportunity Checkbox Attached to Text -->
+<div style="margin-top:15px; font-size:12px; line-height:1.4; font-style:italic;">
+<label style="cursor:pointer;"> 
+<input type="checkbox" name="Equal_Opportunity" value="Yes" style="margin:0; padding:0; width:12px; height:12px; vertical-align:text-top;"> We are an equal-opportunity employer and value diversity in all its forms. All qualified individuals are encouraged to apply. Recruitment is conducted anonymously and in line with Ministry of Labour standards to ensure transparency, impartiality, and equal access for all candidates regardless of gender, age, disability, religion, marital status, or any other characteristic. </label> </div> <input type="submit" value="Submit"> </form> 
+{% if data %} <h3>Submitted Data:</h3> <pre>{{ data }}</pre> {% endif %}
 </body>
 </html>
 """
