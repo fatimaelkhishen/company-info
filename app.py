@@ -100,9 +100,9 @@ form_html = """
          <select class="phone-code" name="Phone_Code" id="phone-code" required style="width: 150px;">
             <option value="">Select country code</option>
         </select>
-        <input type="text" class="phone-number" name="Phone_Number"
-            placeholder="Enter phone number" pattern="^\d{6,15}$"
-            title="Enter 6 to 15 digits (without country code)" required>
+        <input type="text" class="phone-number"
+       placeholder="Enter phone number"
+       pattern=r"^\d{6,15}$" required>
     </div>
 
     <!-- Select2 for searchable dropdown -->
