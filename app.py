@@ -100,9 +100,14 @@ form_html = """
          <select class="phone-code" name="Phone_Code" id="phone-code" required style="width: 150px;">
             <option value="">Select country code</option>
         </select>
-        <input type="text" class="phone-number"
+        <input type="number"
+       id="phone-number"
+       name="Phone_Number"
+       class="phone-number"
        placeholder="Enter phone number"
-       pattern="^\\d{6,15}$" required>
+       min="100000"  <!-- 6 digits minimum -->
+       max="999999999999999"  <!-- 15 digits maximum -->
+       required>
     </div>
 
     <!-- Select2 for searchable dropdown -->
