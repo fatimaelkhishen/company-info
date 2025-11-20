@@ -100,14 +100,11 @@ form_html = """
     <select class="phone-code" name="Phone_Code" id="phone-code" required style="width: 150px;">
         <option value="">Select country code</option>
     </select>
-    <input type="number"
+    <input type="text"
            id="phone-number"
            name="Phone_Number"
            class="phone-number"
-           placeholder="Enter phone number"
-           min="100000"  <!-- 6 digits minimum -->
-           max="999999999999999"  <!-- 15 digits maximum -->
-           required>
+           placeholder="Enter phone number">
 </div>
 
 <!-- Select2 for searchable dropdown -->
@@ -115,7 +112,7 @@ form_html = """
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
 
-<script>   
+<script> 
 const countries =[
   {"country": "Afghanistan", "code": "93", "iso3": "AFG"},
   {"country": "Albania", "code": "355", "iso3": "ALB"},
@@ -361,11 +358,11 @@ const select = document.getElementById('phone-code');
 
 countries.forEach(country => {
     const option = document.createElement('option');
-    option.value = `+${country.code}`;
-    option.textContent = `${country.iso3} +${country.code}`;
+    option.value = `+${country.code}`;  // include + in value
+    option.textContent = `${country.iso3} +${country.code}`; // visible text
     option.setAttribute('data-iso3', country.iso3);
 
-    if (country.iso3 === 'LBN') option.selected = true;
+    if (country.iso3 === 'LBN') option.selected = true; // default Lebanon
 
     select.appendChild(option);
 });
