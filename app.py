@@ -102,7 +102,7 @@ form_html = """
         </select>
         <input type="text" class="phone-number"
        placeholder="Enter phone number"
-       pattern=r"^\d{6,15}$" required>
+       pattern="^\\d{6,15}$" required>
     </div>
 
     <!-- Select2 for searchable dropdown -->
