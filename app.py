@@ -110,7 +110,7 @@ form_html = """
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
 
     <script>
-    fetch('/static/countries_codes_iso3.json')
+    fetch('countries_codes_iso3.json')
         .then(response => response.json())
         .then(data => {
             const select = document.getElementById('phone-code');
