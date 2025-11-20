@@ -3,7 +3,7 @@ import csv
 import os
 import json
 import pandas as pd
-from Emsi import extract_skills_from_text  
+from Emsi import extract_skills_from_text  # <-- تفترض إنه موجود عندك
 
 app = Flask(__name__)
 esco_df = pd.read_excel("esco.xlsx")
@@ -88,13 +88,56 @@ form_html = """
     <label>4. Email</label>
     <input type="email" name="Email" placeholder="example@company.com">
     
+    <style>
+    /* Optional: make the select box a bit wider than default */
+    .phone-wrapper .select2-container {
+        width: 150px !important; /* Adjust width as needed */
+    }
+    </style>
+
     <label>5. Phone Number</label>
-    <div class="phone-wrapper">
-        <select class="phone-code" name="Phone_Code">
-            <option value="+961">+961</option>
+    <div class="phone-wrapper" style="display: flex; gap: 10px;">
+         <select class="phone-code" name="Phone_Code" id="phone-code" required style="width: 150px;">
+            <option value="">Select country code</option>
         </select>
-        <input type="text" class="phone-number" name="Phone_Number" placeholder="71234567" maxlength="8" pattern="\\d{8}" title="Enter 8 digits" required>
+        <input type="text" class="phone-number" name="Phone_Number"
+            placeholder="Enter phone number" pattern="^\d{6,15}$"
+            title="Enter 6 to 15 digits (without country code)" required>
     </div>
+
+    <!-- Select2 for searchable dropdown -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+
+    <script>
+    fetch('/static/countries_codes_iso3.json')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('phone-code');
+
+            data.forEach(country => {
+                const option = document.createElement('option');
+                option.value = `+${country.code}`;
+                option.textContent = `${country.iso3} +${country.code}`; // ISO3 first
+                option.setAttribute('data-iso3', country.iso3);
+
+                if (country.iso3 === 'LBN') {
+                    option.selected = true; // default Lebanon
+                }
+
+                select.appendChild(option);
+            });
+
+            // Initialize Select2 for search
+            $('#phone-code').select2({
+                placeholder: "Select country code",
+                allowClear: true,
+                width: '150px' // increase width here as well
+            });
+        })
+        .catch(err => console.error('Error loading JSON:', err));
+    </script>
+    
     
     <label>6. Company Size (number of employees)</label>
     <input type="text" name="Company_Size" placeholder="e.g., 50–200">
@@ -125,8 +168,23 @@ form_html = """
         <option value="Wholesale and retail trade; repair of motor vehicles and motorcycles">Wholesale and retail trade; repair of motor vehicles and motorcycles</option>
         <option value="Others">Others</option>
     </select>
+    <input type="text" id="other_industry" name="OtherIndustry" placeholder="Please specify" style="display:none; width:100%; margin-top:5px;"/>
+
+    <script>
+    const industrySelect = document.getElementById('industry_section');
+    const otherInput = document.getElementById('other_industry');
+
+    industrySelect.addEventListener('change', function() {
+        if (this.value === 'Others') {
+            otherInput.style.display = 'block';
+        } else {
+            otherInput.style.display = 'none';
+            otherInput.value = ''; // clear previous input
+        }
+    });
+    </script>
     
-<label for="governorate">Governorate:</label>
+<label for="governorate">8. Governorate</label>
 <select id="governorate">
     <option value="">Select Governorate</option>
     <option value="Akkar">Akkar</option>
@@ -139,10 +197,11 @@ form_html = """
     <option value="Nabatieh">Nabatieh</option>
 </select>
 
-<label for="city">City:</label>
+<label for="city">9. City</label>
 <select id="city">
     <option value="">Select City</option>
 </select>
+<input type="text" id="other_city" name="Other_City" placeholder="Please specify your city" style="display:none; width:100%; margin-top:5px;" />
 
 <script>
 // Hardcoded municipalities object
@@ -558,11 +617,7 @@ const municipalities = {
         "Labaa Jezzine","Maaroub Sour","Majadel Sour","Majdal Jezzine","Majdalyoun Saida",
         "Majdalzoun Sour","Marwahine Sour","Moshref Mazraat Sour","Mchmoush", "Others"],
     "Nabatieh": [
-        "Aaba",
-        "Adchit",
-        "Al-Fardis",
-        "Al-Fawqa",
-        "Al-Gharbiya Sair",
+        "Aaba", "Adchit", "Al-Fardis", "Al-Fawqa", "Al-Gharbiya Sair",
         "Al-Gharbiya Zawtar",
         "Al-Habariyah",
         "Al-Kafr",
@@ -601,10 +656,13 @@ const municipalities = {
 
 const governorateSelect = document.getElementById('governorate');
 const citySelect = document.getElementById('city');
+const otherCityInput = document.getElementById('other_city');
 
+// Populate city dropdown on governorate change
 governorateSelect.addEventListener('change', () => {
     const gov = governorateSelect.value;
     citySelect.innerHTML = '<option value="">Select City</option>'; // reset
+
     if (municipalities[gov]) {
         municipalities[gov].forEach(city => {
             const opt = document.createElement('option');
@@ -612,6 +670,19 @@ governorateSelect.addEventListener('change', () => {
             opt.textContent = city;
             citySelect.appendChild(opt);
         });
+    }
+
+    otherCityInput.style.display = 'none';
+    otherCityInput.value = '';
+});
+
+// Show free text field if "Others" is selected
+citySelect.addEventListener('change', () => {
+    if (citySelect.value === 'Others') {
+        otherCityInput.style.display = 'block';
+    } else {
+        otherCityInput.style.display = 'none';
+        otherCityInput.value = '';
     }
 });
 </script>
@@ -696,31 +767,90 @@ governorateSelect.addEventListener('change', () => {
         </div>
     </div>
 
-    <label>Work Schedule:</label>
+    <label>12. Work Schedule:</label>
     <input type="text" name="Work_Schedule" placeholder="e.g., 9 AM – 5 PM, shifts">
 
-    <label>12. Posting Date</label>
-    <input type="date" name="Posting_Date">
-    
-    <label>13. Closing Date</label>
-    <input type="date" name="Closing_Date">
+    <div style="display: flex; gap: 20px; align-items: center;">
+        <div style="flex: 1;">
+            <label for="posting_date">13. Posting Date</label>
+            <input type="date" id="posting_date" name="Posting_Date" style="width: 100%;">
+        </div>
+        <div style="flex: 1;">
+            <label for="closing_date">Closing Date</label>
+            <input type="date" id="closing_date" name="Closing_Date" style="width: 100%;">
+        </div>
+    </div>
 
     <label>14. Duration of initial contract</label>
-    <div style="display:flex; gap:10px;">
-        <input type="text" name="Contract_Duration" placeholder="6" style="width:80px;">
-        <select name="Contract_Unit">
-            <option value="months">Months</option>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" name="Contract_Duration" placeholder="6" style="width:60px;">
+        <select name="Contract_Unit" style="width:100px;">
+            <option value="days">Days</option>
+            <option value="weeks">Weeks</option>
+            <option value="months" selected>Months</option>
             <option value="years">Years</option>
         </select>
     </div>
 
     <label>15. Probation period?</label>
-    <div style="display:flex; gap:20px; align-items:center; margin-top:5px;">
-        <label><input type="radio" name="Probation" value="Yes"> Yes</label>
-        <label><input type="radio" name="Probation" value="No"> No</label>
+    <div style="display: flex; gap: 20px; align-items: center; margin-top: 5px;">
+        <label style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <input type="radio" name="Probation" value="Yes"> Yes
+        </label>
+        <label style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <input type="radio" name="Probation" value="No"> No
+        </label>
     </div>
 
-    <label>16. Degree</label>
+    <!-- Hidden input for probation duration -->
+    <input type="text" id="probation_duration" name="Probation_Duration" placeholder="Specify duration" style="display:none; margin-top:5px; width:150px;">
+
+    <script>
+    const probationRadios = document.getElementsByName('Probation');
+    const probationInput = document.getElementById('probation_duration');
+
+    probationRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.value === 'Yes' && radio.checked) {
+                probationInput.style.display = 'block';
+            } else if (radio.value === 'No' && radio.checked) {
+                probationInput.style.display = 'none';
+                probationInput.value = '';
+            }
+        });
+    });
+    </script>
+    
+    <label>16. Nationality Requirement?</label>
+    <div style="display: flex; gap: 20px; align-items: center; margin-top: 5px;">
+        <label style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <input type="radio" name="Nationality_Req" value="Yes"> Yes
+        </label>
+        <label style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <input type="radio" name="Nationality_Req" value="No"> No
+        </label>
+    </div>
+
+    <!-- Hidden input for specifying nationality -->
+    <input type="text" id="nationality_specify" name="Nationality_Specify" placeholder="Specify nationality" style="display:none; margin-top:5px; width:200px;">
+
+    <script>
+    const nationalityRadios = document.getElementsByName('Nationality_Req');
+    const nationalityInput = document.getElementById('nationality_specify');
+
+    nationalityRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.value === 'Yes' && radio.checked) {
+                nationalityInput.style.display = 'block';
+            } else if (radio.value === 'No' && radio.checked) {
+                nationalityInput.style.display = 'none';
+                nationalityInput.value = '';
+            }
+        });
+    });
+    </script>
+
+    <label>17. Degree</label>
     <select name="Degree_Details">
         <option value="" disabled selected>Select degree</option>
         <option value="High School Diploma">High School Diploma</option>
@@ -731,64 +861,54 @@ governorateSelect.addEventListener('change', () => {
         <option value="Not specified">Not specified</option>
     </select>
 
-<label for="Specialization">17. Specialization</label>
-<div class="dropdown-container">
-    <div id="specialization-box" class="selected-items" onclick="toggleOptions()">
-        <span class="placeholder">Click here to select up to 3 specializations...</span>
+<label>18. Specialization</label>
+<div class="specialization-container">
+    <div class="input-wrapper">
+        <input type="text" class="specialization-input" placeholder="Select or type a specialization..." oninput="filterOptions(this)" onclick="showOptions(this)">
+        <div class="options-list"></div>
     </div>
-    <div id="options-list" class="options-list"></div>
+    <div class="input-wrapper">
+        <input type="text" class="specialization-input" placeholder="Select or type a specialization..." oninput="filterOptions(this)" onclick="showOptions(this)">
+        <div class="options-list"></div>
+    </div>
+    <div class="input-wrapper">
+        <input type="text" class="specialization-input" placeholder="Select or type a specialization..." oninput="filterOptions(this)" onclick="showOptions(this)">
+        <div class="options-list"></div>
+    </div>
 </div>
 
 <style>
-/* Container to position the dropdown relative to the box */
-.dropdown-container {
-    position: relative;
-    width: 100%;
+.specialization-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     max-width: 500px;
 }
 
-.selected-items {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    min-height: 40px;
-    padding: 5px;
+.input-wrapper {
+    position: relative; /* anchor for absolute dropdown */
+    width: 100%;
+}
+
+.specialization-input {
+    padding: 8px;
     border: 1px solid #ccc;
-    cursor: pointer;
-}
-
-.selected-item {
-    background: #007bff;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.9em;
-}
-
-.selected-item span {
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.placeholder {
-    color: #999;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .options-list {
-    display: none; /* hidden by default */
-    position: absolute; /* relative to .dropdown-container */
-    top: 100%; /* right below the box */
+    position: absolute;
+    top: 100%;
     left: 0;
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
     background: white;
-    z-index: 1000;
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
     width: 100%;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    z-index: 1000;
+    display: none;
 }
 
 .options-list div {
@@ -802,228 +922,46 @@ governorateSelect.addEventListener('change', () => {
 </style>
 
 <script>
-let selectedItems = [];
+const iscedOptions = [ "None", "Generic programmes and qualifications not further defined", "Basic programmes and qualifications", "Literacy and numeracy", "Personal skills and development", "Generic programmes and qualifications not elsewhere classified", "Education not further defined", "Education science", "Training for pre-school teachers", "Teacher training without subject specialization", "Teacher training with subject specialization", "Education not elsewhere classified", "Inter-disciplinary programmes and qualifications involving education", "Arts and humanities not further defined", "Arts not further defined", "Audio-visual techniques and media production", "Fashion, interior and industrial design", "Fine arts", "Handicrafts", "Music and performing arts", "Arts not elsewhere classified", "Humanities (except languages) not further defined", "Religion and theology", "History and archaeology", "Philosophy and ethics", "Humanities (except languages) not elsewhere classified", "Languages not further defined", "Language acquisition", "Literature and linguistics", "Languages not elsewhere classified", "Inter-disciplinary programmes and qualifications involving arts and humanities", "Arts and humanities not elsewhere classified", "Social sciences, journalism and information not further defined", "Social and behavioural sciences not further defined", "Economics", "Political sciences and civics", "Psychology", "Sociology and cultural studies", "Social and behavioural sciences not elsewhere classified", "Journalism and information not further defined", "Journalism and reporting", "Library, information and archival studies", "Journalism and information not elsewhere classified", "Inter-disciplinary programmes and qualifications involving social sciences, journalism and information", "Social sciences, journalism and information not elsewhere classified", "Business, administration and law not further defined", "Business and administration not further defined", "Accounting and taxation", "Finance, banking and insurance", "Management and administration", "Marketing and advertising", "Secretarial and office work", "Wholesale and retail sales", "Work skills", "Business and administration not elsewhere classified", "Law", "Inter-disciplinary programmes and qualifications involving business, administration and law", "Business, administration and law not elsewhere classified", "Natural sciences, mathematics and statistics not further defined", "Biological and related sciences not further defined", "Biology", "Biochemistry", "Biological and related sciences not elsewhere classified", "Environment not further defined", "Environmental Sciences", "Natural Environments and wildlife", "Environment not elsewhere classified", "Physical sciences not further defined", "Chemistry", "Earth sciences", "Physics", "Physical sciences not elsewhere classified", "Mathematics and statistics not further defined", "Mathematics", "Statistics", "Inter-disciplinary programmes and qualifications involving Natural sciences, mathematics and statistics", "Natural sciences, mathematics and statistics not elsewhere classified", "Information and Communication Technologies (ICTs) not further defined", "Computer Use", "Database and network design and Administration", "Software and applications development and analysis", "Information Communication Technologies (ICTs) not elsewhere classified", "Inter-disciplinary programmes and qualifications involving Information and Communication Technologies (ICTs)", "Engineering, manufacturing and construction not further defined", "Engineering and engineering trades not further defined", "Chemical engineering and processes", "Environmental protection technology", "Electricity and energy", "Electronics and automation", "Mechanics and metal trades", "Motor vehicles, ships and aircraft", "Engineering and engineering trades not elsewhere classified", "Manufacturing and processing not further defined", "Food processing", "Materials (glass, paper, plastic and wood)", "Textiles (clothes, footwear and leather)", "Mining and extraction", "Manufacturing and processing not elsewhere classified", "Architecture and construction not further defined", "Architecture and town planning", "Building and civil engineering", "Inter-disciplinary programmes and qualifications involving engineering, manufacturing and construction", "Engineering, manufacturing and construction not elsewhere classified", "Agriculture, forestry, fisheries and veterinary not further defined", "Agriculture not further defined", "Crop and livestock production", "Horticulture", "Agriculture not elsewhere classified", "Forestry", "Fisheries", "Veterinary Services", "Inter-disciplinary programmes and qualifications involving agriculture, forestry, fisheries and veterinary services", "Agriculture, forestry, fisheries and veterinary not elsewhere classified", "Health and welfare not further defined", "Health not further defined", "Dental studies", "Medicine", "Nursing and midwifery", "Medical diagnostic and treatment technology", "Therapy and rehabilitation", "Pharmacy", "Traditional and complementary medicine and therapy", "Health not elsewhere classified", "Welfare not further defined", "Care of the elderly and of disabled adults", "Child care and youth services", "Social work and counselling", "Welfare not elsewhere classified", "Inter-disciplinary programmes and qualifications involving health and welfare", "Health and welfare not elsewhere classified", "Services not further defined", "Personal services not further defined", "Domestic services", "Hair and beauty services", "Hotel, restaurants and catering", "Sports", "Travel, tourism and leisure", "Personal services not elsewhere classified", "Hygiene and occupational health services not further defined", "Community sanitation", "Occupational health and safety", "Hygiene and occupational Health Services not elsewhere classified", "Security services not further defined", "Military and defence", "Protection of persons and property", "Security services not elsewhere classified", "Transport services", "Inter-disciplinary programmes and qualifications involving services", "Services not elsewhere classified", "Field unknown" ];
 
-
-const iscedOptions = [
-"None",
-"Generic programmes and qualifications not further defined",
-"Basic programmes and qualifications",
-"Literacy and numeracy",
-"Personal skills and development",
-"Generic programmes and qualifications not elsewhere classified",
-"Education not further defined",
-"Education science",
-"Training for pre-school teachers",
-"Teacher training without subject specialization",
-"Teacher training with subject specialization",
-"Education not elsewhere classified",
-"Inter-disciplinary programmes and qualifications involving education",
-"Arts and humanities not further defined",
-"Arts not further defined",
-"Audio-visual techniques and media production",
-"Fashion, interior and industrial design",
-"Fine arts",
-"Handicrafts",
-"Music and performing arts",
-"Arts not elsewhere classified",
-"Humanities (except languages) not further defined",
-"Religion and theology",
-"History and archaeology",
-"Philosophy and ethics",
-"Humanities (except languages) not elsewhere classified",
-"Languages not further defined",
-"Language acquisition",
-"Literature and linguistics",
-"Languages not elsewhere classified",
-"Inter-disciplinary programmes and qualifications involving arts and humanities",
-"Arts and humanities not elsewhere classified",
-"Social sciences, journalism and information not further defined",
-"Social and behavioural sciences not further defined",
-"Economics",
-"Political sciences and civics",
-"Psychology",
-"Sociology and cultural studies",
-"Social and behavioural sciences not elsewhere classified",
-"Journalism and information not further defined",
-"Journalism and reporting",
-"Library, information and archival studies",
-"Journalism and information not elsewhere classified",
-"Inter-disciplinary programmes and qualifications involving social sciences, journalism and information",
-"Social sciences, journalism and information not elsewhere classified",
-"Business, administration and law not further defined",
-"Business and administration not further defined",
-"Accounting and taxation",
-"Finance, banking and insurance",
-"Management and administration",
-"Marketing and advertising",
-"Secretarial and office work",
-"Wholesale and retail sales",
-"Work skills",
-"Business and administration not elsewhere classified",
-"Law",
-"Inter-disciplinary programmes and qualifications involving business, administration and law",
-"Business, administration and law not elsewhere classified",
-"Natural sciences, mathematics and statistics not further defined",
-"Biological and related sciences not further defined",
-"Biology",
-"Biochemistry",
-"Biological and related sciences not elsewhere classified",
-"Environment not further defined",
-"Environmental Sciences",
-"Natural Environments and wildlife",
-"Environment not elsewhere classified",
-"Physical sciences not further defined",
-"Chemistry",
-"Earth sciences",
-"Physics",
-"Physical sciences not elsewhere classified",
-"Mathematics and statistics not further defined",
-"Mathematics",
-"Statistics",
-"Inter-disciplinary programmes and qualifications involving Natural sciences, mathematics and statistics",
-"Natural sciences, mathematics and statistics not elsewhere classified",
-"Information and Communication Technologies (ICTs) not further defined",
-"Computer Use",
-"Database and network design and Administration",
-"Software and applications development and analysis",
-"Information Communication Technologies (ICTs) not elsewhere classified",
-"Inter-disciplinary programmes and qualifications involving Information and Communication Technologies (ICTs)",
-"Engineering, manufacturing and construction not further defined",
-"Engineering and engineering trades not further defined",
-"Chemical engineering and processes",
-"Environmental protection technology",
-"Electricity and energy",
-"Electronics and automation",
-"Mechanics and metal trades",
-"Motor vehicles, ships and aircraft",
-"Engineering and engineering trades not elsewhere classified",
-"Manufacturing and processing not further defined",
-"Food processing",
-"Materials (glass, paper, plastic and wood)",
-"Textiles (clothes, footwear and leather)",
-"Mining and extraction",
-"Manufacturing and processing not elsewhere classified",
-"Architecture and construction not further defined",
-"Architecture and town planning",
-"Building and civil engineering",
-"Inter-disciplinary programmes and qualifications involving engineering, manufacturing and construction",
-"Engineering, manufacturing and construction not elsewhere classified",
-"Agriculture, forestry, fisheries and veterinary not further defined",
-"Agriculture not further defined",
-"Crop and livestock production",
-"Horticulture",
-"Agriculture not elsewhere classified",
-"Forestry",
-"Fisheries",
-"Veterinary Services",
-"Inter-disciplinary programmes and qualifications involving agriculture, forestry, fisheries and veterinary services",
-"Agriculture, forestry, fisheries and veterinary not elsewhere classified",
-"Health and welfare not further defined",
-"Health not further defined",
-"Dental studies",
-"Medicine",
-"Nursing and midwifery",
-"Medical diagnostic and treatment technology",
-"Therapy and rehabilitation",
-"Pharmacy",
-"Traditional and complementary medicine and therapy",
-"Health not elsewhere classified",
-"Welfare not further defined",
-"Care of the elderly and of disabled adults",
-"Child care and youth services",
-"Social work and counselling",
-"Welfare not elsewhere classified",
-"Inter-disciplinary programmes and qualifications involving health and welfare",
-"Health and welfare not elsewhere classified",
-"Services not further defined",
-"Personal services not further defined",
-"Domestic services",
-"Hair and beauty services",
-"Hotel, restaurants and catering",
-"Sports",
-"Travel, tourism and leisure",
-"Personal services not elsewhere classified",
-"Hygiene and occupational health services not further defined",
-"Community sanitation",
-"Occupational health and safety",
-"Hygiene and occupational Health Services not elsewhere classified",
-"Security services not further defined",
-"Military and defence",
-"Protection of persons and property",
-"Security services not elsewhere classified",
-"Transport services",
-"Inter-disciplinary programmes and qualifications involving services",
-"Services not elsewhere classified",
-"Field unknown"
-];
-
-const box = document.getElementById('specialization-box');
-const optionsList = document.getElementById('options-list');
-
-function toggleOptions() {
-    optionsList.style.display = optionsList.style.display === 'block' ? 'none' : 'block';
-    renderOptions();
+function showOptions(input) {
+    const list = input.nextElementSibling;
+    list.style.display = 'block';
+    renderOptions(list, input.value);
 }
 
-function renderOptions() {
-    optionsList.innerHTML = '';
-    iscedOptions.forEach(option => {
+function filterOptions(input) {
+    const list = input.nextElementSibling;
+    renderOptions(list, input.value);
+}
+
+function renderOptions(list, filter) {
+    list.innerHTML = '';
+    const filtered = iscedOptions.filter(opt => opt.toLowerCase().includes(filter.toLowerCase()));
+    filtered.forEach(option => {
         const div = document.createElement('div');
         div.textContent = option;
         div.onclick = (e) => {
             e.stopPropagation();
-            addItem(option);
+            list.previousElementSibling.value = option;
+            list.style.display = 'none';
         };
-        optionsList.appendChild(div);
+        list.appendChild(div);
     });
 }
 
-function addItem(item) {
-    if(item === "None") {
-        selectedItems = ["None"];
-    } else {
-        selectedItems = selectedItems.filter(i => i !== "None");
-        if(!selectedItems.includes(item) && selectedItems.length < 3) {
-            selectedItems.push(item);
-        }
-    }
-    renderSelectedItems();
-}
-
-function renderSelectedItems() {
-    box.innerHTML = '';
-    if(selectedItems.length === 0) {
-        const placeholder = document.createElement('span');
-        placeholder.classList.add('placeholder');
-        placeholder.innerText = "Click here to select up to 3 specializations...";
-        box.appendChild(placeholder);
-    } else {
-        selectedItems.forEach(item => {
-            const div = document.createElement('div');
-            div.classList.add('selected-item');
-            div.innerHTML = `${item} <span onclick="removeItem('${item}')">&times;</span>`;
-            box.appendChild(div);
-        });
-    }
-}
-
-function removeItem(item) {
-    selectedItems = selectedItems.filter(i => i !== item);
-    renderSelectedItems();
-}
-
-// Close dropdown if clicked outside
+// Close dropdowns when clicking outside
 document.addEventListener('click', function(e) {
-    if(!box.contains(e.target) && !optionsList.contains(e.target)) {
-        optionsList.style.display = 'none';
-    }
+    document.querySelectorAll('.options-list').forEach(list => {
+        if(!list.previousElementSibling.contains(e.target) && !list.contains(e.target)) {
+            list.style.display = 'none';
+        }
+    });
 });
 </script>
 
-
-    <label>18. Languages</label>
-    <table border="1">
+    <label>19. Languages</label>
+    <table border="1" style="width: 60%; border-collapse: collapse; text-align: center;">
         <tr><th>Language</th><th>Reads</th><th>Writes</th><th>Speaks</th></tr>
         <tr>
             <td>Arabic</td>
@@ -1045,45 +983,44 @@ document.addEventListener('click', function(e) {
         </tr>
     </table>
 
-    <button type="button" id="addLangBtn">Add Language</button>
+    <button type="button" id="addLangBtn" style="margin-top:10px; padding: 5px 10px; font-size: 0.9em; width: 120px;">Add Language</button>
 
     <script>
-        // small script for adding languages
-        document.addEventListener("DOMContentLoaded", function(){
-            const table = document.querySelector('table');
-            document.getElementById('addLangBtn').addEventListener('click', function(){
-                const newRow = table.insertRow(-1);
-                newRow.innerHTML = `
-                    <td><input type="text" name="Other_Languages[]" placeholder="Specify language"></td>
-                    <td><input type="checkbox" name="Other_Read[]"></td>
-                    <td><input type="checkbox" name="Other_Write[]"></td>
-                    <td><input type="checkbox" name="Other_Speak[]"></td>
-                `;
-            });
+    document.addEventListener("DOMContentLoaded", function(){
+        const table = document.querySelector('table');
+        document.getElementById('addLangBtn').addEventListener('click', function(){
+            const newRow = table.insertRow(-1);
+            newRow.innerHTML = `
+                <td><input type="text" name="Other_Languages[]" placeholder="Language" style="width:120px;"></td>
+                <td><input type="checkbox" name="Other_Read[]"></td>
+                <td><input type="checkbox" name="Other_Write[]"></td>
+                <td><input type="checkbox" name="Other_Speak[]"></td>
+            `;
         });
+    });
     </script>
-
-    <label>19. Years of Experience</label>
+   </br>
+    <label>20. Years of Experience</label>
     <input type="text" name="Years_of_Experience_Required">
 </div>
 
 <!-- =================== Compensation & Benefits =================== -->
 <div class="box">
     <h3>Compensation & Benefits</h3>
-    <label>20. Salary Range</label>
+    <label>21. Salary Range</label>
     <div style="display:flex; gap:5px;">
         <input type="text" name="Salary_Range" placeholder="">
         <select name="Salary_Currency">
-            <option value="USD">USD</option>
             <option value="LBP">LBP</option>
+            <option value="USD">USD</option>
         </select>
     </div>
 
-    <label>21. Other Allowances</label>
+    <label>22. Other Allowances</label>
     <input type="text" name="Other_Allowances" placeholder="e.g., transportation, meals, phone">
 
-    <label>22. Benefits</label>
-    <table border="1">
+    <label>23. Benefits</label>
+    <table border="1" style="width: 60%; border-collapse: collapse; text-align: center;">
         <tr><th>Category</th><th>Benefit</th><th>Select</th></tr>
         <tr><td rowspan="4">Statutory & Core Benefits</td><td>NSSF (Social Security)</td><td><input type="checkbox" name="Benefits[]" value="NSSF (Social Security)"></td></tr>
         <tr><td>Annual Leave</td><td><input type="checkbox" name="Benefits[]" value="Annual Leave"></td></tr>
@@ -1101,17 +1038,17 @@ document.addEventListener('click', function(e) {
 <div class="box">
     <h3>Job Description</h3>
 
-    <label>23. Background</label>
+    <label>24. Background</label>
     <textarea name="Background" rows="3"></textarea>
 
-    <label>24. Duties and Responsibilities</label>
+    <label>25. Duties and Responsibilities</label>
     <textarea name="Duties_Responsibilities" rows="3"></textarea>
 
-    <label>25. Tasks</label>
+    <label>26. Tasks</label>
     <textarea name="Tasks" rows="3"></textarea>
 
     <!-- ======= Skills Section (26) ======= -->
-<h3>26. Skills</h3>
+<h3>27. Skills</h3>
 
 <!-- Skill Input Method (Horizontal Radios) -->
 <div style="margin-bottom:10px; display:flex; gap:20px; align-items:center;">
