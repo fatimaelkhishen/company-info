@@ -88,12 +88,41 @@ form_html = """
     <label>4. Email</label>
     <input type="email" name="Email" placeholder="example@company.com">
     
-    <style>
-    /* Optional: make the select box a bit wider than default */
-    .phone-wrapper .select2-container {
-        width: 150px !important; /* Adjust width as needed */
-    }
-    </style>
+<style>
+/* Make both boxes stick together */
+.phone-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0; /* No space between boxes */
+}
+
+/* Remove radius between them */
+.phone-code,
+.select2-container .select2-selection--single {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.phone-number {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Match heights */
+.select2-container .select2-selection--single {
+    height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.select2-selection__rendered {
+    line-height: 38px !important;
+}
+
+.select2-selection__arrow {
+    height: 36px !important;
+}
+</style>
 
 <label>5. Phone Number</label>
 
