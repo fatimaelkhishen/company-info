@@ -373,6 +373,27 @@ $('#phone-code').select2({
     width: '150px'
 });
 </script>
+        .phone-wrapper {
+            display: flex;
+            align-items: center;      /* يعمل alignment */
+            gap: 10px;
+        }
+
+        /* Select2 height fix */
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .select2-selection__rendered {
+            line-height: 38px !important;
+        }
+
+        .select2-selection__arrow {
+            height: 36px !important;
+        }
+    </style>
     
     
     <label>6. Company Size (number of employees)</label>
