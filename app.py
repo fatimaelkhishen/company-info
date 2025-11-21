@@ -97,8 +97,7 @@ form_html = """
 }
 
 /* Remove radius between them */
-.phone-code,
-.select2-container .select2-selection--single {
+.phone-code {
     border-top-right-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
 }
@@ -108,11 +107,13 @@ form_html = """
     border-bottom-left-radius: 0 !important;
 }
 
-/* Match heights */
-.select2-container .select2-selection--single {
+/* Select2 styling (match height + remove right radius) */
+.select2-container--default .select2-selection--single {
     height: 38px !important;
     display: flex !important;
     align-items: center !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
 }
 
 .select2-selection__rendered {
@@ -123,6 +124,7 @@ form_html = """
     height: 36px !important;
 }
 </style>
+
 
 <label>5. Phone Number</label>
 
@@ -142,42 +144,6 @@ form_html = """
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
-
-<style>
-/* Make both boxes stick together */
-.phone-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 0; /* No space between boxes */
-}
-
-/* Remove radius between them */
-.phone-code,
-.select2-container .select2-selection--single {
-    border-top-right-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-}
-
-.phone-number {
-    border-top-left-radius: 0 !important;
-    border-bottom-left-radius: 0 !important;
-}
-
-/* Match heights */
-.select2-container .select2-selection--single {
-    height: 38px !important;
-    display: flex !important;
-    align-items: center !important;
-}
-
-.select2-selection__rendered {
-    line-height: 38px !important;
-}
-
-.select2-selection__arrow {
-    height: 36px !important;
-}
-</style>
 <script> 
 const countries =[
   {"country": "Afghanistan", "code": "93", "iso3": "AFG"},
@@ -439,28 +405,7 @@ $('#phone-code').select2({
     width: '150px'
 });
 </script>
-        .phone-wrapper {
-            display: flex;
-            align-items: center;      /* يعمل alignment */
-            gap: 10px;
-        }
-
-        /* Select2 height fix */
-        .select2-container .select2-selection--single {
-            height: 38px !important;
-            display: flex !important;
-            align-items: center !important;
-        }
-
-        .select2-selection__rendered {
-            line-height: 38px !important;
-        }
-
-        .select2-selection__arrow {
-            height: 36px !important;
-        }
-    </style>
-    
+       
     
     <label>6. Company Size (number of employees)</label>
     <input type="text" name="Company_Size" placeholder="e.g., 50–200">
