@@ -370,7 +370,6 @@ countries.forEach(country => {
 // Initialize Select2
 $('#phone-code').select2({
     placeholder: "Select country code",
-    allowClear: true,
     width: '150px'
 });
 </script>
