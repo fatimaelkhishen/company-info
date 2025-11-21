@@ -119,6 +119,13 @@ form_html = """
 .select2-selection__rendered {
     line-height: 38px !important;
 }
+.phone-number {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    height: 38px; /* match Select2 height */
+    width: 150px; /* same as Select2 width */
+    box-sizing: border-box;
+}
 
 .select2-selection__arrow {
     height: 36px !important;
@@ -403,6 +410,7 @@ $('#phone-code').select2({
     placeholder: "Select country code",
     width: '150px'
 });
+
 </script>
        
     
