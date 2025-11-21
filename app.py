@@ -46,7 +46,7 @@ form_html = """
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Company Job Form</title>
+    <title>Company JobPosting Form</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
         .box { background: #fff; padding: 15px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
