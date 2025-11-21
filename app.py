@@ -96,10 +96,12 @@ form_html = """
     </style>
 
 <label>5. Phone Number</label>
-<div class="phone-wrapper" style="display: flex; gap: 10px;">
-    <select class="phone-code" name="Phone_Code" id="phone-code" required style="width: 150px;">
+
+<div class="phone-wrapper">
+    <select class="phone-code" name="Phone_Code" id="phone-code" required>
         <option value="">Select country code</option>
     </select>
+
     <input type="text"
            id="phone-number"
            name="Phone_Number"
@@ -107,11 +109,46 @@ form_html = """
            placeholder="Enter phone number">
 </div>
 
-<!-- Select2 for searchable dropdown -->
+<!-- Select2 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
 
+<style>
+/* Make both boxes stick together */
+.phone-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0; /* No space between boxes */
+}
+
+/* Remove radius between them */
+.phone-code,
+.select2-container .select2-selection--single {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.phone-number {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Match heights */
+.select2-container .select2-selection--single {
+    height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.select2-selection__rendered {
+    line-height: 38px !important;
+}
+
+.select2-selection__arrow {
+    height: 36px !important;
+}
+</style>
 <script> 
 const countries =[
   {"country": "Afghanistan", "code": "93", "iso3": "AFG"},
